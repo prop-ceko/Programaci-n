@@ -1,0 +1,10 @@
+# https://github.com/985563349/react-vite-template/blob/a7e7be5e8abadc172286bbec2a50c49f2d70ef61/.gitignore
+node_modules
+build
+dist
+dist-ssr
+*.local
+
+# Logs
+logs
+*.log*
