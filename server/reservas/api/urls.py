@@ -3,8 +3,6 @@ from rest_framework import routers
 
 from reservas.api import views
 
-from knox import views as knox_views
-
 router = routers.DefaultRouter()
 router.register(r'aulas', views.AulaViewSet)
 router.register(r'establecimientos', views.EstablecimientoViewSet)

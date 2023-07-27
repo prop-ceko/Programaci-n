@@ -8,7 +8,7 @@ from django.db import models
 from django.db.models import UniqueConstraint
 from django.utils.translation import gettext_lazy as _
 
-from reservas.settings import MAX_LARGO_NOMBRES, MAX_LARGO_USUARIOS
+from reservas.settings import MAX_LARGO_NOMBRES
 from the_project import settings
 
 # Create your models here.

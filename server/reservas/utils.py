@@ -1,7 +1,4 @@
-from typing import Iterable, Type
-
 from django.contrib.auth.models import User
-from django.db.models import Model
 
 
 def intersect(a_beg, a_end, b_beg, b_end):
