@@ -5,25 +5,22 @@ import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import Link from '@mui/material/Link';
 import TextField from '@mui/material/TextField';
-// @ts-ignore
-import Base from '../Base';
-import { pages } from '../Pages';
-import { useContext } from 'react';
-import AuthContext from '../context/AuthContext';
+import { Form, Navigate, useNavigate, useNavigation } from 'react-router-dom'
+import { useAuth } from '../context/api';
 
 
 export default function Login() {
-   // @ts-ignore
-   const {login, logout} = useContext(AuthContext)
-
+   const {login} = useAuth()
+   const navigate = useNavigate()
 
    const handleSubmit = (event) => {
       event.preventDefault();
       const data = new FormData(event.currentTarget);
-      login(data.get('email'), data.get('password'))
+      login(data.get('email'), data.get('password')).then(() => navigate("/reservas"))
    };
 
    return (
+
       <Container component="main" maxWidth="xs" sx={{
          paddingX: 4,
          marginTop: 4,
@@ -31,26 +28,26 @@ export default function Login() {
          flexDirection: 'column',
          alignItems: 'center'
       }}>
-         <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+         <Box component={Form} onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
             <TextField
-               margin="normal"
-               required
-               fullWidth
-               id="email"
                label="Correo electrónico"
+               id="email"
                name="email"
+               type="email"
                autoComplete="email"
                autoFocus
+               fullWidth
+               required
             />
             <TextField
                margin="normal"
-               required
-               fullWidth
-               name="password"
                label="Contraseña"
+               name="password"
                type="password"
                id="password"
                autoComplete="password"
+               fullWidth
+               required
             />
             <Button
                type="submit"
@@ -60,34 +57,26 @@ export default function Login() {
             >
                Continuar
             </Button>
-            <Button
-               onClick={logout}
-               fullWidth
-               variant="contained"
-               sx={{ mb: 2 }}
-            >
-               Logout
-            </Button>
-            <Button
+            {/* <Button
                type="submit"
                fullWidth
                variant="contained"
             >
                Continuar con Google
-            </Button>
+            </Button> */}
             <Stack direction="column" alignItems="center" mt={4} gap={1} >
                <Grid item>
-                  <Link href={pages.recoverPassword.path} variant="body2">
+                  <Link href="/recover_password" variant="body2">
                      Olvidé mi contraseña
                   </Link>
                </Grid>
                <Grid item>
-                  <Link href={pages.register.path} variant="body2">
+                  <Link href="/register" variant="body2">
                      Registrarme
                   </Link>
                </Grid>
                <Grid item>
-                  <Link href={pages.registerTemporally.path} variant="body2">
+                  <Link href="/temporal_register" variant="body2">
                      No pertenezco a la institución
                   </Link>
                </Grid>

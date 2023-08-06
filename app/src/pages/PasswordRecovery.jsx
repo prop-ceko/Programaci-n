@@ -2,8 +2,6 @@ import { Container } from '@mui/material';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
-import Base from '../Base';
-import { pages } from '../Pages';
 
 export default function PasswordRecovery() {
    const handleSubmit = (event) => {

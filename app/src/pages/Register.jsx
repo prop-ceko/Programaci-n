@@ -4,7 +4,6 @@ import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
 import Link from '@mui/material/Link';
 import TextField from '@mui/material/TextField';
-import Base from '../Base';
 import { pages } from '../Pages';
 
 export default function Register() {
@@ -81,12 +80,12 @@ export default function Register() {
             </Button>
             <Stack direction="column" alignItems="center" mt={4} gap={1} >
                <Grid item>
-                  <Link href={pages.login.path} variant="body2">
+                  <Link href="/login" variant="body2">
                      Ya tengo una cuenta. Iniciar sesión
                   </Link>
                </Grid>
                <Grid item>
-                  <Link href={pages.registerTemporally.path}variant="body2">
+                  <Link href="/temporal_register" variant="body2">
                      No pertenezco a la institución
                   </Link>
                </Grid>

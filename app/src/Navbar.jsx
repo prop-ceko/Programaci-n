@@ -4,14 +4,14 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import { Menu } from './Menu';
 import PropTypes from "prop-types";
-import { AuthProvider } from './context/AuthContext';
 
 
 export function Navbar({icons}) {
    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
    const [title, setTitle] = useState("Título");
+   // const title = "Título"
 
-   document.title = title;
+   // document.title = title;
 
    return (
       <Box>
@@ -36,15 +36,12 @@ export function Navbar({icons}) {
             </Toolbar>
             <Menu isMenuOpen={isDrawerOpen} setIsMenuOpen={setIsDrawerOpen}/>
          </AppBar>
-         <AuthProvider>
             <Outlet/>
-         </AuthProvider>
       </Box>
    );
 }
 
 Navbar.propTypes = {
-   title: PropTypes.string.isRequired,
    icons: PropTypes.arrayOf(PropTypes.element),
    children: PropTypes.node
 };
