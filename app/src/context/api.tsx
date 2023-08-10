@@ -1,12 +1,13 @@
-import axios from "axios"
+import axios, { AxiosError, AxiosResponse } from "axios"
 import { createContext, useContext, useEffect, useRef, useState } from "react"
 import Cookies from "js-cookie"
+import { createState } from "state-pool"
 
 const baseURL = "http://127.0.0.1:8000/api"
 
 declare interface Credentials {
     token: string,
-    expiry?: Date
+    expiry?: string
 }
 
 export interface EquipamientoType {
@@ -23,7 +24,8 @@ export interface AulaType {
 }
 
 export interface ReservaEquipamientoType {
-    equipamiento: number,
+    id: number
+    nombre?: string
     cantidad: number
 }
 
@@ -39,15 +41,17 @@ export interface ReservaType {
     equipamiento: ReservaEquipamientoType[]
 }
 
+declare interface TokenInfoType {
+    expiry: string
+    valid: boolean
+}
+
+
 function saveCredentials(credentials: Credentials) {
     localStorage.setItem("auth", JSON.stringify(credentials))
 }
 
-function clearCredentials() {
-    localStorage.removeItem("auth")
-}
-
-export function loadCredentials() : Credentials {
+function loadCredentials() : Credentials {
     try {
         return JSON.parse(localStorage.getItem('auth'))
     } catch {
@@ -55,33 +59,111 @@ export function loadCredentials() : Credentials {
     }
 }
 
-export function areCredentialsValid(credentials: Credentials) {
+function isTokenValid(credentials: Credentials) {
     const now = new Date()
     const then = new Date(credentials?.expiry)
     return credentials && then > now
 }
 
-function authHeader(credentials: Credentials) {
-    return credentials?.token ? `Token ${credentials.token}` : "F"
+function setCredentials(newValue: Credentials) {
+    credentials = newValue
+    saveCredentials(credentials)
 }
+
+function clearCredentials() {
+    credentials = null
+    localStorage.removeItem("auth")
+}
+
+// function authHeaders(credentials: Credentials) {
+//     return credentials ? {
+//         Authorization: `Token ${credentials.token}`
+//     } : null
+// }
+
+
+let credentials = loadCredentials()
+const globalAuth = createState(isTokenValid(credentials))
 
 const axiosInstance = axios.create({
     baseURL
 })
 
-async function getTokenInfo(token) {
-    return await axiosInstance.post("/token/", {
-        token
-    }, {
-        withCredentials: true,
-        headers: {
-            'X-CSRFToken': Cookies.get('csrftoken')
-        }
+const axiosPublic = axios.create({
+    baseURL
+})
+
+axiosInstance.interceptors.request.use(async req => {
+    req.headers.Authorization = `Token ${credentials.token}`
+    return req
+})
+
+axiosInstance.interceptors.response.use(async res => {
+    if (!globalAuth.getValue())
+        return res
+
+    await refreshTokenInfo()
+
+    return res
+}, error => {
+    if (error.response?.status == 401)
+        globalAuth.setValue(false)
+    return Promise.reject(error)
+})
+
+async function refreshTokenInfo() {
+    const info = await getTokenInfo(credentials.token)
+    setCredentials({
+        ...credentials,
+        expiry: info.expiry
     })
 }
 
+async function getTokenInfo(token) : Promise<TokenInfoType> {
+    const {data} = await axiosPublic.post("/token/", {
+        token
+    })
+    // , {
+        // withCredentials: true,
+        // headers: {
+        //     'X-CSRFToken': Cookies.get('csrftoken')
+        // }
+    // })
+    return data
+}
+
+export async function login(email, password) {
+    if (globalAuth.getValue())
+        return false
+
+    const result =  await axiosPublic.post("/login/", {
+        email,
+        password
+    })
+
+    if (result.status == 200) // Ok
+    {
+        setCredentials(result.data)
+        globalAuth.setValue(true)
+        return true
+    }
+    return false
+}
+
+export async function logout() {
+    if (!globalAuth.getValue())
+        return
+
+    const result = await axiosInstance.post("/logout/")
+    if (result.status == 204) // No content
+    {
+        clearCredentials()
+        globalAuth.setValue(false)
+    }
+}
+
 export async function register(nombre, apellido, dni, email, password) {
-    return await axiosInstance.post("/register/", {
+    return await axiosPublic.post("/registro/", {
         nombre,
         apellido,
         dni,
@@ -90,128 +172,60 @@ export async function register(nombre, apellido, dni, email, password) {
     })
 }
 
-// function get<T=any>(endpoint) {
-//     return async (): Promise<{ status: number; data: T }> => {
-//         const {status, data} = await axiosInstance.get(endpoint)
-//         return {status, data}
-//     }
-// }
-
-function get<T=any>(endpoint) {
-    return async (): Promise<T> => {
-        try {
-            const result = await axiosInstance.get(endpoint)
-            if (result.status == 200)
-                return result.data
-        } catch (error) {
-            console.log("Error")
-        }
+export async function makeRequest<T>(request : () => Promise<AxiosResponse>): Promise<{ status: number; data: T }> {
+    if (!globalAuth.getValue())
         return null
+
+    let response;
+    try {
+        response = await request()
+        const {status, data} = response
+        return {status, data}
+    } catch (error) {
+        const {status, data} = error.response ?? {}
+        return {status, data}
     }
 }
 
-// function post(endpoint) {
-//     return async () => {
-//         const result = await axiosInstance.post(endpoint)
-//         if (result.status == 200)
-//             return result.data
-//         return []
-//     }
-// }
+function get<T>(endpoint) {
+    return (...params) => {
+        const url = typeof endpoint === "function" ? endpoint(...params) : endpoint
+        return makeRequest<T>(() => axiosInstance.get(url))
+    }
+}
+
+function post<T>(endpoint) {
+    return (data: T, ...params) => {
+        const url = typeof endpoint === "function" ? endpoint(...params) : endpoint
+        return makeRequest<T>(() => axiosInstance.post(url, data))
+    }
+}
+
+function patch<T>(endpoint) {
+    return (data: T, ...params) => {
+        const url = typeof endpoint === "function" ? endpoint(...params) : endpoint
+        return makeRequest<T>(() => axiosInstance.patch(url, data))
+    }
+}
 
 export const getAulas = get<AulaType[]>("/aulas/")
 export const getEquipamiento = get<EquipamientoType[]>("/equipamiento/")
 export const getReservas = get<ReservaType[]>("/reservas/")
-// export const getReserva = get("/aulas/")
+export const getReserva = get<ReservaType>((id: number) => `/reservas/${id}/`)
 
-// export async function getAulas() {
-//     const {status, data} = await axiosInstance.get("/aulas/")
-//     return {status, data}
-// }
-
-// export async function getEquipamiento() {
-//     return await axiosInstance.get("/equipamiento/")
-// }
-
-// export async function getAllReservas() {
-//     return await axiosInstance.get("/reservas/")
-// }
-
-export async function getReserva(id) {
-    const {status, data} = await axiosInstance.get(`/reservas/${id}/`)
-    return status == 200 ? data : null
-}
-
-export async function createReserva(reserva) {
-    const {status, data} = await axiosInstance.post("/reservas/", reserva)
-    return status == 201 ? data : null
-}
-
-export async function updateReserva(id, reserva) {
-    const {status, data} = await axiosInstance.patch(`/reservas/${id}/`, reserva)
-    return status == 200 ? data : null
-}
+export const createReserva = post<ReservaType>("/reservas/")
+export const updateReserva = patch<ReservaType>((id: number) => `/reservas/${id}/`)
 
 export declare interface AuthData {
     auth?: boolean
-    login?: (email, password) => Promise<void>
+    login?: (email, password) => Promise<boolean>
     logout?: () => Promise<void>
 }
 
 const AuthContext: React.Context<AuthData> = createContext(null)
 
 export const AuthProvider = ({children} : { children: React.ReactNode }) => {
-    const [credentials, _setCredentials] = useState(loadCredentials())
-    const [auth, setAuth] = useState(areCredentialsValid(credentials))
-
-    useEffect(() => {
-        const requestInterceptor = axiosInstance.interceptors.request.use(
-            config => {
-                // Attach current access token ref value to outgoing request headers
-                config.headers.Authorization = authHeader(credentials);
-                return config;
-            }
-        );
-
-        const responseInterceptor = axiosInstance.interceptors.response.use(null, error => {
-            if (error.response.status == 401){
-                setCredentials({})
-                clearCredentials()
-            }
-        })
-
-        return () => {
-            axiosInstance.interceptors.request.eject(requestInterceptor)
-            axiosInstance.interceptors.response.eject(responseInterceptor)
-        };
-    }, [])
-
-    function setCredentials(tokens) {
-        saveCredentials(tokens)
-        _setCredentials(tokens)
-        setAuth(areCredentialsValid(tokens))
-    }
-
-    async function login(email, password) {
-        const result =  await axiosInstance.post("/login/", {
-            email,
-            password
-        })
-
-        if (result.status == 200) // Ok
-            setCredentials(result.data)
-    }
-
-    async function logout() {
-        if (credentials === null)
-            return
-
-        const result = await axiosInstance.post("/logout/")
-        if (result.status == 204) // No content
-            setCredentials(null)
-
-        console.log(result)
-    }
+    const [auth, ] = globalAuth.useState()
 
     const data = {
         auth,

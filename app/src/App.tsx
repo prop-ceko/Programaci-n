@@ -1,20 +1,16 @@
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
-import { Navigate, RouteObject, RouterProvider, createBrowserRouter } from 'react-router-dom';
+import { Link as RouterLink, LinkProps as RouterLinkProps, RouterProvider, createBrowserRouter } from 'react-router-dom';
 import { createRoutes } from './Pages';
-import { Link as RouterLink, LinkProps as RouterLinkProps } from 'react-router-dom';
 
+import { DateCalendar, DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterLuxon } from '@mui/x-date-pickers/AdapterLuxon';
 import React from 'react';
-import { Navbar } from './Navbar';
-import MisReservas from './pages/MisReservas';
-import PasswordRecovery from './pages/PasswordRecovery';
-import PasswordReset from './pages/PasswordReset';
-import PrivateRoutes from './pages/PrivateRoutes';
-import PublicRoutes from './pages/PublicRoutes';
-import Register from './pages/Register';
-import RegisterTemporally from './pages/RegisterTemporally';
-import ReservaDetalle from './pages/ReservaDetalle';
-import Login from './pages/Login';
-import { getAulas, useAuth } from './context/api';
+import { DateField } from '@mui/x-date-pickers/DateField';
+import { TimeField } from '@mui/x-date-pickers/TimeField';
+import { DateTime } from 'luxon';
+import { DatePickerElement, FormContainer } from 'react-hook-form-mui';
+import {AdapterDateFns} from '@mui/x-date-pickers/AdapterDateFns'
+import es from 'date-fns/locale/es';
 
 const LinkBehavior = React.forwardRef<
   HTMLAnchorElement,
@@ -49,7 +45,7 @@ const defaultTheme = createTheme({
    components: {
       MuiLink: {
          defaultProps: {
-            component: LinkBehavior,
+            component: LinkBehavior
          },
       },
       MuiButtonBase: {
@@ -61,6 +57,21 @@ const defaultTheme = createTheme({
          defaultProps: {
             LinkComponent: LinkBehavior,
          },
+      },
+      MuiButton: {
+         defaultProps: {
+            variant: 'outlined'
+         }
+      },
+      MuiTextField: {
+         defaultProps: {
+            variant: 'outlined'
+         }
+      },
+      MuiPaper: {
+         defaultProps: {
+            variant: 'outlined'
+         }
       }
    },
 });
@@ -69,72 +80,14 @@ const router = createBrowserRouter(createRoutes())
 
 function App() {
    // const {auth} = useAuth()
-   // console.log("Updating app")
-   // const router = createBrowserRouter([
-   //    {
-   //       path: '/',
-   //       element: <Navbar/>,
-   //       children:
-   //       [
-   //          {
-   //             path: '/',
-   //             element: <Navigate to="/login"/>
-   //          },
-   //          {
-   //             element: <PublicRoutes auth={auth} />,
-   //             children: [
-   //                {
-   //                   path: '/login',
-   //                   element: <Login />
-   //                },
-   //                {
-   //                   path: '/register',
-   //                   element: <Register />
-   //                },
-   //                {
-   //                   path: '/recover_password',
-   //                   element: <PasswordRecovery />
-   //                },
-   //                {
-   //                   path: '/temporal_register',
-   //                   element: <RegisterTemporally />
-   //                },
-   //                {
-   //                   path: '/reset_password',
-   //                   element: <PasswordReset />
-   //                },
-   //             ]
-   //          },
-   //          {
-   //             element: <PrivateRoutes auth={auth} />,
-   //             children: [
-   //                {
-   //                   path: '/reservas',
-   //                   element: <MisReservas />,
-   //                   loader: async () => {
-   //                      // getReservas()
-   //                      return 1
-   //                   }
-   //                },
-   //                {
-   //                   path: '/reservar',
-   //                   element: <Reservar />,
-   //                   loader: async () => {
-   //                      const {data} = await getAulas()
-   //                      return data
-   //                   }
-   //                },
-   //             ]
-   //          }
-   //       ]
-   //    }
-   // ])
 
    return (
-      <ThemeProvider theme={defaultTheme}>
-         <CssBaseline/>
-         <RouterProvider router={router} fallbackElement />
-      </ThemeProvider>
+      <LocalizationProvider dateAdapter={AdapterLuxon} adapterLocale="es">
+         <ThemeProvider theme={defaultTheme}>
+            <CssBaseline/>
+            <RouterProvider router={router} fallbackElement />
+         </ThemeProvider>
+      </LocalizationProvider>
    );
 }
 

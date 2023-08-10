@@ -1,96 +1,100 @@
-import { Container, Box, Select, MenuItem, TextField, Button, Stack, Grid, Link, Typography, Card, IconButton, Divider } from "@mui/material";
-import { Form, useLoaderData, useParams } from "react-router-dom";
-import { AulaType, EquipamientoType, ReservaType, getAulas, getEquipamiento, getReserva, updateReserva } from "../context/api";
+import { Container, Box, Select, MenuItem, TextField, Button, Stack, Grid, Link, Typography, Card, IconButton, Divider, Snackbar, Paper, CardContent, CardActions } from "@mui/material";
+import { Form, useLoaderData, useNavigate, useParams } from "react-router-dom";
+import { AulaType, EquipamientoType, ReservaEquipamientoType, ReservaType, createReserva, getAulas, getEquipamiento, getReserva, updateReserva } from "../context/api";
 import { ReactNode, useEffect, useState } from "react";
-import { Add, Remove } from "@mui/icons-material";
+import { Add, Clear, Delete, Remove } from "@mui/icons-material";
+import { AutocompleteElement, DatePickerElement, FormContainer, SelectElement, TextFieldElement, TimePickerElement } from "react-hook-form-mui";
+import { DateTime } from "luxon";
 
-interface Data {
-   aulas: AulaType[]
-   equipamientoDisponible: EquipamientoType[]
-   reserva: ReservaType
-}
 
-interface EquipamientoParams {
-   equipamiento: string | number
+interface EquipamientoProps {
+   id: number | string
    cantidad: number
    setEquipamiento: (id: number) => void
    setCantidad: (cantidad: number) => void
-   children: ReactNode
+   opciones: ReactNode | ReactNode[]
+   children?: ReactNode
 }
 
-function Equipamiento({ equipamiento="", cantidad=0, setEquipamiento, setCantidad, children }: EquipamientoParams) {
-   function add(n) {
-      return () => setCantidad(cantidad + n)
+function getDefaultValues(reserva: ReservaType) {
+   if (!reserva)
+      return {}
+
+   return {
+      aula: reserva.id,
+      fecha: DateTime.fromSQL(reserva.fecha),
+      desde: DateTime.fromSQL(reserva.desde),
+      hasta: DateTime.fromSQL(reserva.hasta),
+   }
+}
+
+function Equipamiento({ id, cantidad=0, setEquipamiento, setCantidad, opciones=[], children=null }: EquipamientoProps) {
+
+   function handleCantidad(cantidad) {
+      setCantidad(cantidad < 1 ? 1 : parseInt(cantidad))
    }
 
-   return (
-      <Box>
-         <TextField
-            name="equipamiento" label="Equipamiento"
-            margin="normal"
-            value={equipamiento}
-            onChange={e => setEquipamiento(parseInt(e.target.value))}
-            select
-            fullWidth
-         >
-            {children}
-         </TextField>
-         <Stack direction="row">
-            <IconButton sx={{m:"auto"}} onClick={add(-1)}><Remove/></IconButton>
-            <TextField
-               name="cantidad"
-               value={cantidad}
-               onChange={e => setCantidad(parseInt(e.target.value))}
-               inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
-            />
-            <IconButton sx={{m:"auto"}} onClick={add(1)}><Add/></IconButton>
-         </Stack>
-      </Box>
-   )
-}
-
-function ErrorTextField({validation=value => value === "", errorMessage= "Error", ...props}) {
-   const [error, setError] = useState(false)
-   const helpText = error ? errorMessage : ""
-
-   function handleChange(event) {
-      setError(!validation(event.target.value))
-      props.onChange(event)
-   }
+   const mostrarAcciones = Boolean(children)
 
    return (
-      <TextField
-         onChange={handleChange}
-         onSubmitCapture={() => console.log("Submit")}
-         error={error}
-         helperText={helpText}
-         {...props}
-      />
+      <Card sx={{ padding: 1 }}>
+         <CardContent>
+            <Stack direction="row" alignItems="center" gap={2}>
+               <TextField
+                  name="equipamiento" label="Equipamiento"
+                  value={id}
+                  onChange={e => setEquipamiento(parseInt(e.target.value))}
+                  select
+                  sx={{
+                     flexGrow: 1
+                  }}
+               >
+                  {opciones}
+               </TextField>
+               <TextField
+                  name="cantidad"
+                  value={cantidad}
+                  type="number"
+                  onChange={e => handleCantidad(e.target.value)}
+                  sx={{
+                     textAlign: "right",
+                     flexBasis: "4em"
+                  }}
+                  inputProps={{ style: { textAlign: "center" }}}
+               />
+            </Stack>
+         </CardContent>
+
+         {
+            mostrarAcciones &&
+            <CardActions>
+               {children}
+            </CardActions>
+         }
+      </Card>
    )
 }
-
 
 export default function ReservaDetalle() {
    const { aulas, equipamientoDisponible, reserva } = useLoaderData() as Data
+   const defaultValues = getDefaultValues(reserva)
 
-   const [aula, setAula] = useState(reserva?.aula.id ?? "")
-   const [fecha, setFecha] = useState(reserva?.fecha ?? "")
-   const [desde, setDesde] = useState(reserva?.desde ?? "")
-   const [hasta, setHasta] = useState(reserva?.hasta ?? "")
    const [equipamiento, setEquipamiento] = useState(reserva?.equipamiento ?? [])
 
    const [nuevoEquipamiento, setNuevoEquipamiento] = useState<number | string>("")
    const [nuevoCantidad, setNuevoCantidad] = useState(1)
 
-   const [errors, setErrors] = useState(new Map())
+   const [snack, setSnack] = useState({
+      open: false,
+      message: ""
+   })
+
+   const minTime = DateTime.fromObject({hour:8}), maxTime = DateTime.fromObject({hour:23})
+   const navigate = useNavigate()
 
    function resetNuevo() {
       setNuevoEquipamiento("")
       setNuevoCantidad(1)
-   }
-
-   function num(setter) {
-      return e => setter(parseInt(e.target.value))
    }
 
    function changeEquipamiento(pos, property) {
@@ -105,12 +109,12 @@ export default function ReservaDetalle() {
       if (typeof nuevoEquipamiento !== "number")
          return
 
-      if (equipamiento.some(e => e.equipamiento == nuevoEquipamiento))
+      if (equipamiento.some(e => e.id == nuevoEquipamiento))
          return
 
       const nuevo = [
          {
-            equipamiento: nuevoEquipamiento,
+            id: nuevoEquipamiento,
             cantidad: nuevoCantidad
          }
       ]
@@ -119,138 +123,149 @@ export default function ReservaDetalle() {
       setEquipamiento(equipamiento.concat(nuevo))
    }
 
-   function addError(component, message, condition) {
-      if (!condition)
-         return
-
-      const modify = errors => errors.set(component, message)
-      setErrors(modify)
+   function borrarEquipamiento(id) {
+      return () => {
+         setEquipamiento(equipamiento.filter(e => e.id != id))
+      }
    }
 
-   // function validate() {
-   //    addError("aula", "Debes seleccionar un aula", aula === "")
-   //    addError("fecha", "Debes seleccionar la fecha", fecha === "")
-   // }
-
-   const handleSubmit = (event) => {
-      event.preventDefault();
-      // setErrors(new Map())
-      // validate()
-      // if (typeof aula !== "number")
-      //    return
-
+   const handleSubmit = (data) => {
       const nueva : ReservaType = {
          aula: {
-            id: aula as number
+            id: data.aula
          },
-         fecha,
-         desde,
-         hasta,
+         fecha: (data.fecha as DateTime)?.toSQLDate(),
+         desde: (data.desde as DateTime)?.toSQLTime({ includeOffset: false }),
+         hasta: (data.hasta as DateTime)?.toSQLTime({ includeOffset: false }),
          equipamiento
       }
 
-      console.log(nueva)
-      // if (reserva)
-         // updateReserva(reserva.id, nueva)
+      const enviar = async () => {
+         const operacion = reserva ? updateReserva(nueva, reserva.id) : createReserva(nueva)
+         const result = await operacion
+         if (result.status >= 200 && result.status <= 300){
+            navigate("/reservas")
+         }
+         else {
+            setSnack({open: true, message: "Ocurrió un error" })
+            console.error(`Status: ${result.status}, Data:`, result.data)
+         }
+      }
+
+      enviar()
    };
 
-   const equipamientoOptions = equipamientoDisponible.map(a =>
+   const aulaOpciones = aulas?.map(a => ({ id: a.id, label: a.nombre }))
+   const equipamientoOpciones = equipamientoDisponible?.map(a =>
       <MenuItem key={a.id} value={a.id}>{a.nombre}</MenuItem>
    )
 
-   console.log("Au", errors, "aula" in errors)
-
    return (
       <Container component="main" maxWidth="xs" sx={{
-         paddingX: 4,
-         marginTop: 4,
-         display: 'flex',
-         flexDirection: 'column',
-         alignItems: 'center'
+         marginY: 4,
       }}>
-         <Box component={Form} onSubmit={handleSubmit} noValidate sx={{ mt: 1 }} width={1}>
-            <ErrorTextField
+         <Snackbar
+            open={snack.open}
+            autoHideDuration={5000}
+            onClose={()=> setSnack({ ...snack, open: false})}
+            message={snack.message}
+         />
+         <FormContainer
+            values={defaultValues}
+            onSuccess={handleSubmit}
+         >
+            <SelectElement
+               name="aula"
                label="Aula"
                margin="normal"
-               value={aula}
-               onChange={num(setAula)}
-               select
+               options={aulaOpciones}
                fullWidth
-            >
-               {aulas.map(a =>
-                  <MenuItem key={a.id} value={a.id}>{a.nombre}</MenuItem>
-               )}
-            </ErrorTextField>
-            <TextField
-               label="Fecha"
-               margin="normal"
-               value={fecha}
-               onChange={num(setFecha)}
-               type="date"
-               fullWidth
-               InputLabelProps={{ shrink: true }}
+               required
             />
-            <TextField
+            <DatePickerElement
+               name="fecha"
+               label="Fecha"
+               required
+               sx={{
+                  width: 1,
+                  marginY: 1
+               }}
+            />
+            <TimePickerElement
                name="desde"
                label="Desde"
-               margin="normal"
-               value={desde}
-               onChange={num(setDesde)}
-               type="time"
-               fullWidth
-               InputLabelProps={{ shrink: true }}
-            />
-            <TextField
+               // Marca error pero funciona
+               minTime={minTime}
+               maxTime={maxTime}
+               required
+               sx={{
+                  width: 1,
+                  marginY: 1
+               }}
+               />
+            <TimePickerElement
                name="hasta"
                label="Hasta"
-               margin="normal"
-               value={hasta}
-               onChange={num(setHasta)}
-               type="time"
-               fullWidth
-               InputLabelProps={{ shrink: true }}
+               minTime={minTime}
+               maxTime={maxTime}
+               required
+               sx={{
+                  width: 1,
+                  marginY: 1
+               }}
             />
-            <Card variant="outlined" sx={{
-               padding: 2
+            <Paper sx={{
+               marginTop: 1,
+               padding: 2,
+               gap: 1
             }}>
-               <Typography>Equipamiento</Typography>
-               {equipamiento.map((e, i) =>
-                  <Equipamiento
-                     key={e.equipamiento}
-                     setEquipamiento={changeEquipamiento(i, "equipamiento")}
-                     setCantidad={changeEquipamiento(i, "cantidad")}
-                     {...e}
-                  >
-                     {equipamientoOptions}
-                  </Equipamiento>
-               )}
-               <Divider sx={{ mt: 2, mb: 1 }} />
+               <Typography marginBottom={1}>Equipamiento</Typography>
+               <Stack gap={1}>
+                  {equipamiento.length == 0 ? <Typography align="center">Ninguno</Typography> :
+                  equipamiento.map((e, i) =>
+                     <Equipamiento
+                        key={e.id}
+                        setEquipamiento={changeEquipamiento(i, "equipamiento")}
+                        setCantidad={changeEquipamiento(i, "cantidad")}
+                        opciones={equipamientoOpciones}
+                        {...e}
+                     >
+                        <Button onClick={borrarEquipamiento(e.id)}>Quitar</Button>
+                     </Equipamiento>
+                  )}
+               </Stack>
+               <Divider sx={{ marginY: 2 }} />
                <Equipamiento
-                  equipamiento={nuevoEquipamiento}
+                  id={nuevoEquipamiento}
                   cantidad={nuevoCantidad}
                   setEquipamiento={e => setNuevoEquipamiento(e)}
                   setCantidad={setNuevoCantidad}
+                  opciones={equipamientoOpciones}
                >
-                  {equipamientoOptions}
+                  <Button onClick={addEquipamiento}>Agregar</Button>
                </Equipamiento>
-               <Button fullWidth onClick={addEquipamiento} sx={{ mt: 1 }}>Agregar</Button>
-            </Card>
-            <Button
-               type="submit"
-               fullWidth
-               variant="contained"
-               sx={{ mt: 3, mb: 2 }}
-            >
+            </Paper>
+            <Button type="submit" fullWidth sx={{ marginTop: 1 }}>
                Guardar
             </Button>
-         </Box>
+         </FormContainer>
       </Container>
-   );
+   )
 }
 
-export async function reservarLoader({params}) {
+interface Data {
+   aulas: AulaType[]
+   equipamientoDisponible: EquipamientoType[]
+   reserva: ReservaType
+}
+
+export async function reservarLoader({params}): Promise<Data> {
    const aulas = await getAulas()
    const equipamientoDisponible = await getEquipamiento()
    const reserva = params.id ? await getReserva(params.id) : null
-   return { aulas, equipamientoDisponible, reserva }
+   return {
+      aulas: aulas?.data,
+      equipamientoDisponible: equipamientoDisponible?.data,
+      reserva: reserva?.data
+   }
 }

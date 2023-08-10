@@ -85,7 +85,7 @@ export default function Register() {
                   </Link>
                </Grid>
                <Grid item>
-                  <Link href="/temporal_register" variant="body2">
+                  <Link href="/registro_temporal" variant="body2">
                      No pertenezco a la institución
                   </Link>
                </Grid>

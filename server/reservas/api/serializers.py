@@ -1,12 +1,20 @@
+from collections import OrderedDict, Counter
 from datetime import datetime, time
 from typing import Iterable
 
+from django.contrib.auth.password_validation import validate_password
+from django.core import exceptions
+from knox.models import AuthToken
 from rest_framework import serializers
 
+from django.utils.translation import gettext_lazy as _
+from rest_framework.fields import empty
+
 from reservas.models import Equipamiento, Establecimiento, EquipamientoAula, Reserva, Aula, Edificio, \
-    ReservaEquipamiento
+    ReservaEquipamiento, Usuario
 from reservas.settings import RESERVA_DURACION_MINIMA, RESERVA_HORARIO_MINIMO, RESERVA_HORARIO_MAXIMO, \
     RESERVA_DURACION_MAXIMA
+from reservas.utils import repeated
 
 
 def differ_from_instance(instance, data: dict, fields: Iterable[str]) -> bool:
@@ -15,8 +23,6 @@ def differ_from_instance(instance, data: dict, fields: Iterable[str]) -> bool:
             return True
     return False
 
-
-# django.db.models.fields.related_descriptors.create_forward_many_to_many_manager()
 
 def update_fields(instance, data, fields: Iterable[str]):
     for field in fields:
@@ -33,9 +39,78 @@ def update_if_different(instance, data, fields: Iterable[str]):
     return any_changed
 
 
+# class DynamicSerializer(serializers.ModelSerializer):
+#
+#     def __init__(self, instance=None, data=empty, fields=None, exclude_fields=None, **kwargs):
+#         self.dynamic_fields = fields
+#         self.dynamic_exclude_fields = exclude_fields
+#         if fields is not None and exclude_fields is not None:
+#             raise Exception("Either fields or exclude_fields must be set. Not both")
+#         super().__init__(instance, data, **kwargs)
+#
+#     def get_field_names(self, declared_fields, info):
+#         fields = super().get_field_names(declared_fields, info)
+#         if self.dynamic_exclude_fields is not None:
+#             return [field for field in fields if field not in self.dynamic_exclude_fields]
+#         if self.dynamic_fields is not None:
+#             return [field for field in fields if field in self.dynamic_fields]
+#         return fields
+
+
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(required=True, write_only=True, style={'input_type': 'password'})
+
+
+class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(required=True, write_only=True, style={'input_type': 'password'},
+                                     label=_("Password"))
+
+    class Meta:
+        model = Usuario
+        fields = ("first_name", "last_name", "dni", "email", "password")
+
+    def validate_dni(self, value: int):
+        if value <= 0:
+            raise serializers.ValidationError("Debe ser mayor o igual a 1")
+        return value
+
+    def validate_first_name(self, value: str):
+        return self.capitalize(value)
+
+    def validate_last_name(self, value: str):
+        return self.capitalize(value)
+
+    def validate(self, attrs):
+        # here data has all the fields which have validated values
+        # so we can create a User instance out of it
+        user = Usuario(**attrs)
+
+        # get the password from the data
+        password = attrs.get('password')
+
+        errors = dict()
+        try:
+            # validate the password and catch the exception
+            validate_password(password=password, user=user)
+
+        # the exception raised here is different than serializers.ValidationError
+        except exceptions.ValidationError as e:
+            errors['password'] = list(e.messages)
+
+        if errors:
+            raise serializers.ValidationError(errors)
+
+        return super().validate(attrs)
+
+    @staticmethod
+    def capitalize(value):
+        palabras = [palabra.capitalize() for palabra in value.split(" ") if len(palabra) > 1]
+        return " ".join(palabras)
+
+
+class TokenSerializer(serializers.Serializer):
+    token = serializers.CharField(required=True)
 
 
 class EquipamientoAulaSerializer(serializers.ModelSerializer):
@@ -57,6 +132,26 @@ class AulaSerializer(serializers.ModelSerializer):
         return aula.disponible(ahora=True) is None
 
 
+class AulaFieldSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False)
+    nombre = serializers.CharField(required=False)
+
+    class Meta:
+        model = Aula
+        fields = ('id', 'nombre')
+
+    def validate(self, attrs):
+        if "id" not in attrs and "nombre" not in attrs:
+            raise serializers.ValidationError("Se requiere el id o el nombre del aula")
+        return attrs
+
+
+# class AulaFieldSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Aula
+#         fields = ('id', 'nombre')
+
+
 class EstablecimientoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Establecimiento
@@ -75,12 +170,6 @@ class EquipamientoSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class EquipamientoFieldSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Equipamiento
-        exclude = ('id',)
-
-
 class ReservaEquipamientoSerializer(serializers.ModelSerializer):
     # nombre = serializers.CharField(source="equipamiento.nombre")
 
@@ -89,11 +178,21 @@ class ReservaEquipamientoSerializer(serializers.ModelSerializer):
         fields = ('equipamiento', 'cantidad')
 
 
+class ReservaEquipamientoFieldSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source="equipamiento.id")
+    nombre = serializers.CharField(source="equipamiento.nombre", required=False)
+
+    class Meta:
+        model = ReservaEquipamiento
+        fields = ('id', 'nombre', 'cantidad')
+
+
 class ReservaSerializer(serializers.ModelSerializer):
     solicitante = serializers.HiddenField(
         default=serializers.CurrentUserDefault()
     )
-    equipamiento = ReservaEquipamientoSerializer(many=True, required=False, default=[])
+    aula = AulaFieldSerializer()
+    equipamiento = ReservaEquipamientoFieldSerializer(many=True, required=False, default=[])
 
     class Meta:
         model = Reserva
@@ -111,12 +210,11 @@ class ReservaSerializer(serializers.ModelSerializer):
         ReservaEquipamiento.objects.bulk_create(items)
         return reserva
 
+    def save(self, **kwargs):
+        return super().save(**kwargs)
+
     def update(self, reserva: Reserva, validated_data):
         no_encontrado = [equipamiento.id for equipamiento in reserva.equipamiento.all()]
-
-        sin_cambios = self.to_internal_value(self.to_representation(reserva)) == validated_data
-        if sin_cambios:
-            raise serializers.ValidationError("Sin cambios")
 
         update_fields(reserva, validated_data, ("aula", "fecha", "desde", "hasta"))
         reserva.save()
@@ -149,31 +247,31 @@ class ReservaSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def validate_equipamiento(value: Iterable):
-        def mapping(item: dict):
-            return item["equipamiento"]
+        def get_reserva_equipamiento(item: dict):
+            d = OrderedDict()
+            d["equipamiento"] = Equipamiento.objects.get(pk=item["equipamiento"]["id"])
+            d["cantidad"] = item["cantidad"]
+            return d
 
-        # cantidad_equipamiento = dict()
-        set_equipamiento = set()
-        for equipamiento in map(mapping, value):
-            # cantidad_equipamiento[equipamiento] = cantidad_equipamiento.get(equipamiento, 0) + 1
-            if equipamiento in set_equipamiento:
-                raise serializers.ValidationError(
-                    "Se detectaron múltiples entradas para algunos equipamientos. "
-                    "Debe haber una única entrada por equipamiento")
+        if repeated(value, lambda item: item["equipamiento"]["id"]):
+            raise serializers.ValidationError(
+                "Se detectaron múltiples entradas para algunos equipamientos. "
+                "Debe haber una única entrada por equipamiento")
 
-            set_equipamiento.add(equipamiento)
+        return [get_reserva_equipamiento(equipamiento) for equipamiento in value]
 
-        # repetidos = []
-        # for equipamiento in cantidad_equipamiento:
-        #     if cantidad_equipamiento[equipamiento] > 1:
-        #         repetidos.append(str(equipamiento.id))
-        #
-        # if len(repetidos) > 0:
-        #     raise serializers.ValidationError(
-        #         f"Se detectaron múltiples entradas para los equipamientos {', '.join(repetidos)}. "
-        #         f"Solo debe haber una única entrada por equipamiento")
+    def validate_aula(self, value):
+        try:
+            if "id" in value and "nombre" in value:
+                return Aula.objects.get(pk=value["id"], nombre=value["nombre"])
+            if "id" in value:
+                return Aula.objects.get(pk=value["id"])
+            if "nombre" in value:
+                return Aula.objects.get(nombre=value["nombre"])
+        except Exception:
+            pass
 
-        return value
+        raise serializers.ValidationError("No se encontró el aula con el id y nombre especificados")
 
     def validate(self, attrs):
         fecha = attrs["fecha"]
@@ -219,3 +317,11 @@ class ReservaSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(f"La reserva debe durar por lo menos {RESERVA_DURACION_MINIMA}")
         if duracion > RESERVA_DURACION_MAXIMA:
             raise serializers.ValidationError(f"La reserva puede durar hasta {RESERVA_DURACION_MAXIMA}")
+
+
+class ReservaFieldSerializer(serializers.ModelSerializer):
+    equipamiento = ReservaEquipamientoSerializer(many=True, required=False, default=[])
+
+    class Meta:
+        model = Reserva
+        fields = ('id', 'fecha', 'desde', 'hasta', 'equipamiento')

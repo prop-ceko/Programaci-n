@@ -1,8 +1,20 @@
+from typing import Iterable
+
 from django.contrib.auth.models import User
 
 
 def intersect(a_beg, a_end, b_beg, b_end):
     return a_beg < b_end and a_end > b_beg
+
+
+def repeated(collection: Iterable, fun=lambda x: x):
+    already = set()
+    for item in collection:
+        key = fun(item)
+        if key in already:
+            return True
+        already.add(key)
+    return False
 
 
 def create_users(usernames: list):

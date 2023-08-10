@@ -1,7 +1,7 @@
 import MenuIcon from '@mui/icons-material/Menu';
 import { Box, AppBar, Toolbar, IconButton, Typography, Stack } from "@mui/material";
 import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, ScrollRestoration } from "react-router-dom";
 import { Menu } from './Menu';
 import PropTypes from "prop-types";
 
@@ -15,6 +15,7 @@ export function Navbar({icons}) {
 
    return (
       <Box>
+         <ScrollRestoration/>
          <AppBar position="static">
             <Toolbar>
                <IconButton

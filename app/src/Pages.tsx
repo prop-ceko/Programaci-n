@@ -10,8 +10,6 @@ import Register from './pages/Register';
 import RegisterTemporally from './pages/RegisterTemporally';
 import ReservaDetalle, { reservarLoader } from './pages/ReservaDetalle';
 
-const nav = <Navbar/>
-
 export const routes: RouteObject[] = [
    {
       path: '/',
@@ -30,19 +28,19 @@ export const routes: RouteObject[] = [
                   element: <Login />
                },
                {
-                  path: '/register',
+                  path: '/registro',
                   element: <Register />
                },
                {
-                  path: '/recover_password',
+                  path: '/recuperar_contrasena',
                   element: <PasswordRecovery />
                },
                {
-                  path: '/temporal_register',
+                  path: '/registro_temporal',
                   element: <RegisterTemporally />
                },
                {
-                  path: '/reset_password',
+                  path: '/reestablecer_contrasena',
                   element: <PasswordReset />
                },
             ]
@@ -97,7 +95,7 @@ export const pages: Page[] = [
    },
    {
       title: 'Registro',
-      path: '/register',
+      path: '/registro',
       showInMenu: true,
       visibility: Visibility.NonAuthOnly
    },
@@ -109,17 +107,17 @@ export const pages: Page[] = [
    },
    {
       title: 'Recuperar contraseña',
-      path: '/recover_password',
+      path: '/recuperar_contrasena',
       visibility: Visibility.NonAuthOnly
    },
    {
       title: 'Registro temporal',
-      path: '/temporal_register',
+      path: '/registro_temporal',
       visibility: Visibility.NonAuthOnly
    },
    {
       title: 'Restablecer contraseña',
-      path: '/reset_password',
+      path: '/reestablecer_contrasena',
    },
 ]
 

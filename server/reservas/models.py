@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 from typing import Optional
 
 from django.contrib.auth.models import User, Group, AbstractUser
@@ -18,6 +18,7 @@ Group.add_to_class('prioridad', models.PositiveIntegerField(default=0))
 class Usuario(AbstractUser):
     username = None
     email = models.EmailField(_("email address"), unique=True)
+    dni = models.PositiveIntegerField(unique=True)
     first_name = models.CharField(_("first name"), max_length=MAX_LARGO_NOMBRES)
     last_name = models.CharField(_("last name"), max_length=MAX_LARGO_NOMBRES)
 
@@ -58,10 +59,16 @@ class Aula(models.Model):
         if self.edificio is not None:
             self.establecimiento = self.edificio.establecimiento
 
+    def get_reservas(self, fecha: Optional[datetime.date] = None):
+        if fecha is None:
+            fecha = datetime.date.today()
+        return Reserva.objects.filter(aula=self, fecha=fecha)
+
+
     def disponible(self, ahora=False, fecha: Optional[datetime.date] = None,
                    desde: Optional[datetime.time] = None, hasta: Optional[datetime.time] = None):
         if ahora:
-            ahora = datetime.now()
+            ahora = datetime.datetime.now()
             fecha = ahora.date()
             desde = hasta = ahora.time()
         reservas_ahora = Reserva.objects.filter(aula=self, fecha=fecha, desde__lte=desde, hasta__gte=hasta)
