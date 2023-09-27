@@ -9,11 +9,12 @@ import PublicRoutes from './pages/PublicRoutes';
 import Register from './pages/Register';
 import RegisterTemporally from './pages/RegisterTemporally';
 import ReservaDetalle, { reservarLoader } from './pages/ReservaDetalle';
+import Base from './pages/Base';
 
 export const routes: RouteObject[] = [
    {
       path: '/',
-      element: <Navbar/>,
+      element: <Base/>,
       children:
       [
          {

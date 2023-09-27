@@ -8,6 +8,7 @@ from django.db import models
 from django.db.models import UniqueConstraint
 from django.utils.translation import gettext_lazy as _
 
+from reservas.managers import UserManager
 from reservas.settings import MAX_LARGO_NOMBRES
 from the_project import settings
 
@@ -22,9 +23,11 @@ class Usuario(AbstractUser):
     first_name = models.CharField(_("first name"), max_length=MAX_LARGO_NOMBRES)
     last_name = models.CharField(_("last name"), max_length=MAX_LARGO_NOMBRES)
 
+    objects = UserManager()
+
     USERNAME_FIELD = 'email'
     EMAIL_FIELD = 'email'
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = ['dni']
 
     def __str__(self):
         return self.email

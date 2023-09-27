@@ -5,13 +5,15 @@ import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import Link from '@mui/material/Link';
 import TextField from '@mui/material/TextField';
-import { Form, Navigate, useNavigate, useNavigation } from 'react-router-dom'
+import { Form, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/api';
+import { setTitle } from '../context/navbar';
 
 
 export default function Login() {
    const {login} = useAuth()
    const navigate = useNavigate()
+   setTitle("Inicio de sesión")
 
    const handleSubmit = (event) => {
       event.preventDefault();
@@ -20,7 +22,6 @@ export default function Login() {
    };
 
    return (
-
       <Container component="main" maxWidth="xs" sx={{
          marginY: 4,
          display: 'flex',

@@ -2,9 +2,12 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import TextField from '@mui/material/TextField';
+import { setTitle } from '../context/navbar';
 
 
 export default function RegisterTemporally() {
+   setTitle("Registro temporal")
+
    const handleSubmit = (event) => {
       event.preventDefault();
       const data = new FormData(event.currentTarget);

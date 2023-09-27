@@ -2,8 +2,11 @@ import { Container } from '@mui/material';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
+import { setTitle } from '../context/navbar';
 
 export default function PasswordReset() {
+   setTitle("Reestablecimiento de contraseña")
+
    const handleSubmit = (event) => {
       event.preventDefault();
       const data = new FormData(event.currentTarget);

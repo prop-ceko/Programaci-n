@@ -75,13 +75,6 @@ function clearCredentials() {
     localStorage.removeItem("auth")
 }
 
-// function authHeaders(credentials: Credentials) {
-//     return credentials ? {
-//         Authorization: `Token ${credentials.token}`
-//     } : null
-// }
-
-
 let credentials = loadCredentials()
 const globalAuth = createState(isTokenValid(credentials))
 
@@ -172,7 +165,12 @@ export async function register(nombre, apellido, dni, email, password) {
     })
 }
 
-export async function makeRequest<T>(request : () => Promise<AxiosResponse>): Promise<{ status: number; data: T }> {
+interface Response<T> {
+    status: number,
+    data: T
+}
+
+export async function makeRequest<T>(request : () => Promise<AxiosResponse>): Promise<Response<T>> {
     if (!globalAuth.getValue())
         return null
 
@@ -187,34 +185,42 @@ export async function makeRequest<T>(request : () => Promise<AxiosResponse>): Pr
     }
 }
 
-function get<T>(endpoint) {
-    return (...params) => {
-        const url = typeof endpoint === "function" ? endpoint(...params) : endpoint
+function get<T>(endpoint: string | ((id: number) => string)) {
+    return (id = 0) => {
+        const url = typeof endpoint === "function" ? endpoint(id) : endpoint
         return makeRequest<T>(() => axiosInstance.get(url))
     }
 }
 
-function post<T>(endpoint) {
-    return (data: T, ...params) => {
-        const url = typeof endpoint === "function" ? endpoint(...params) : endpoint
+function post<T>(endpoint: string) {
+    return (data: T) => {
+        const url = endpoint
         return makeRequest<T>(() => axiosInstance.post(url, data))
     }
 }
 
-function patch<T>(endpoint) {
-    return (data: T, ...params) => {
-        const url = typeof endpoint === "function" ? endpoint(...params) : endpoint
+function patch<T>(endpoint: (id: number) => string) {
+    return (data: T, id: number) => {
+        const url = endpoint(id)
         return makeRequest<T>(() => axiosInstance.patch(url, data))
+    }
+}
+
+function remove<T>(endpoint: (id: number) => string) {
+    return (id: number) => {
+        const url = endpoint(id)
+        return makeRequest<T>(() => axiosInstance.delete(url))
     }
 }
 
 export const getAulas = get<AulaType[]>("/aulas/")
 export const getEquipamiento = get<EquipamientoType[]>("/equipamiento/")
 export const getReservas = get<ReservaType[]>("/reservas/")
-export const getReserva = get<ReservaType>((id: number) => `/reservas/${id}/`)
+export const getReserva = get<ReservaType>(id => `/reservas/${id}/`)
 
 export const createReserva = post<ReservaType>("/reservas/")
-export const updateReserva = patch<ReservaType>((id: number) => `/reservas/${id}/`)
+export const updateReserva = patch<ReservaType>(id => `/reservas/${id}/`)
+export const deleteReserva = remove<ReservaType>(id => `/reservas/${id}/`)
 
 export declare interface AuthData {
     auth?: boolean

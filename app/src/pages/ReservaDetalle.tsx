@@ -1,10 +1,11 @@
-import { Container, Box, Select, MenuItem, TextField, Button, Stack, Grid, Link, Typography, Card, IconButton, Divider, Snackbar, Paper, CardContent, CardActions } from "@mui/material";
-import { Form, useLoaderData, useNavigate, useParams } from "react-router-dom";
-import { AulaType, EquipamientoType, ReservaEquipamientoType, ReservaType, createReserva, getAulas, getEquipamiento, getReserva, updateReserva } from "../context/api";
-import { ReactNode, useEffect, useState } from "react";
-import { Add, Clear, Delete, Remove } from "@mui/icons-material";
-import { AutocompleteElement, DatePickerElement, FormContainer, SelectElement, TextFieldElement, TimePickerElement } from "react-hook-form-mui";
+import { Container, MenuItem, TextField, Button, Stack, Typography, Card, Divider, Paper, CardContent, CardActions } from "@mui/material";
+import { useLoaderData, useNavigate } from "react-router-dom";
+import { AulaType, EquipamientoType, ReservaType, createReserva, deleteReserva, getAulas, getEquipamiento, getReserva, updateReserva } from "../context/api";
+import { ReactNode, useState } from "react";
+import { DatePickerElement, FormContainer, SelectElement, TimePickerElement } from "react-hook-form-mui";
 import { DateTime } from "luxon";
+import { useSnackbar } from "../context/snackbar";
+import { setTitle } from "../context/navbar";
 
 
 interface EquipamientoProps {
@@ -76,6 +77,8 @@ function Equipamiento({ id, cantidad=0, setEquipamiento, setCantidad, opciones=[
 }
 
 export default function ReservaDetalle() {
+   setTitle("Reserva")
+
    const { aulas, equipamientoDisponible, reserva } = useLoaderData() as Data
    const defaultValues = getDefaultValues(reserva)
 
@@ -84,13 +87,9 @@ export default function ReservaDetalle() {
    const [nuevoEquipamiento, setNuevoEquipamiento] = useState<number | string>("")
    const [nuevoCantidad, setNuevoCantidad] = useState(1)
 
-   const [snack, setSnack] = useState({
-      open: false,
-      message: ""
-   })
-
    const minTime = DateTime.fromObject({hour:8}), maxTime = DateTime.fromObject({hour:23})
    const navigate = useNavigate()
+   const snack = useSnackbar()
 
    function resetNuevo() {
       setNuevoEquipamiento("")
@@ -129,6 +128,11 @@ export default function ReservaDetalle() {
       }
    }
 
+   function eliminar() {
+      deleteReserva(reserva.id)
+      navigate(-1)
+   }
+
    const handleSubmit = (data) => {
       const nueva : ReservaType = {
          aula: {
@@ -147,7 +151,7 @@ export default function ReservaDetalle() {
             navigate("/reservas")
          }
          else {
-            setSnack({open: true, message: "Ocurrió un error" })
+            snack.show("Ocurrió un error")
             console.error(`Status: ${result.status}, Data:`, result.data)
          }
       }
@@ -164,12 +168,6 @@ export default function ReservaDetalle() {
       <Container component="main" maxWidth="xs" sx={{
          marginY: 4,
       }}>
-         <Snackbar
-            open={snack.open}
-            autoHideDuration={5000}
-            onClose={()=> setSnack({ ...snack, open: false})}
-            message={snack.message}
-         />
          <FormContainer
             values={defaultValues}
             onSuccess={handleSubmit}
@@ -230,7 +228,7 @@ export default function ReservaDetalle() {
                         opciones={equipamientoOpciones}
                         {...e}
                      >
-                        <Button onClick={borrarEquipamiento(e.id)}>Quitar</Button>
+                        <Button color="error" onClick={borrarEquipamiento(e.id)}>Quitar</Button>
                      </Equipamiento>
                   )}
                </Stack>
@@ -245,8 +243,11 @@ export default function ReservaDetalle() {
                   <Button onClick={addEquipamiento}>Agregar</Button>
                </Equipamiento>
             </Paper>
-            <Button type="submit" fullWidth sx={{ marginTop: 1 }}>
+            <Button variant="contained" type="submit" fullWidth sx={{ marginTop: 1 }}>
                Guardar
+            </Button>
+            <Button variant="contained" color="error" onClick={eliminar} fullWidth sx={{ marginTop: 1 }}>
+               Eliminar
             </Button>
          </FormContainer>
       </Container>

@@ -5,8 +5,11 @@ import Grid from '@mui/material/Grid';
 import Link from '@mui/material/Link';
 import TextField from '@mui/material/TextField';
 import { pages } from '../Pages';
+import { setTitle } from '../context/navbar';
 
 export default function Register() {
+   setTitle("Registro")
+
    const handleSubmit = (event) => {
       event.preventDefault();
       const data = new FormData(event.currentTarget);
@@ -70,13 +73,6 @@ export default function Register() {
                sx={{ mt: 3, mb: 2 }}
             >
                Continuar
-            </Button>
-            <Button
-               type="submit"
-               fullWidth
-               variant="contained"
-            >
-               Continuar con Google
             </Button>
             <Stack direction="column" alignItems="center" mt={4} gap={1} >
                <Grid item>

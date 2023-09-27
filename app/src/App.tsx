@@ -1,16 +1,10 @@
-import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
+import { Box, CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import { Link as RouterLink, LinkProps as RouterLinkProps, RouterProvider, createBrowserRouter } from 'react-router-dom';
 import { createRoutes } from './Pages';
 
-import { DateCalendar, DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterLuxon } from '@mui/x-date-pickers/AdapterLuxon';
 import React from 'react';
-import { DateField } from '@mui/x-date-pickers/DateField';
-import { TimeField } from '@mui/x-date-pickers/TimeField';
-import { DateTime } from 'luxon';
-import { DatePickerElement, FormContainer } from 'react-hook-form-mui';
-import {AdapterDateFns} from '@mui/x-date-pickers/AdapterDateFns'
-import es from 'date-fns/locale/es';
 
 const LinkBehavior = React.forwardRef<
   HTMLAnchorElement,
@@ -85,7 +79,9 @@ function App() {
       <LocalizationProvider dateAdapter={AdapterLuxon} adapterLocale="es">
          <ThemeProvider theme={defaultTheme}>
             <CssBaseline/>
-            <RouterProvider router={router} fallbackElement />
+            <Box>
+               <RouterProvider router={router} fallbackElement />
+            </Box>
          </ThemeProvider>
       </LocalizationProvider>
    );

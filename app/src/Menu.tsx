@@ -19,7 +19,7 @@ function ItemButton({auth, visibility, text, href, onClick} : { auth: boolean, v
    )
 }
 
-export function Menu({ isMenuOpen, setIsMenuOpen }) {
+export function Menu({ isMenuOpen, closeMenu }) {
    const {auth, logout} = useAuth()
 
    // const screens = getScreenArray()
@@ -27,7 +27,7 @@ export function Menu({ isMenuOpen, setIsMenuOpen }) {
    // const authOnly = screens.filter(s => s.visibility == Visibility.AuthOnly)
    // const nonAuthOnly = screens.filter(s => s.visibility == Visibility.NonAuthOnly)
 
-   return <Drawer open={isMenuOpen} onClose={() => setIsMenuOpen(false)}>
+   return <Drawer open={isMenuOpen} onClose={closeMenu}>
       <Link to="https://unraf.edu.ar">
          <img src={logo} width={300} style={{ padding: "8px" }}/>
       </Link>
@@ -40,7 +40,7 @@ export function Menu({ isMenuOpen, setIsMenuOpen }) {
                href={screen.path}
                text={screen.title}
                visibility={screen.visibility}
-               onClick={() => setIsMenuOpen(false)}
+               onClick={closeMenu}
             />
          )}
          {/* {public_.map(page =>
@@ -58,7 +58,7 @@ export function Menu({ isMenuOpen, setIsMenuOpen }) {
    </Drawer>;
 }
 
-Menu.propTypes = {
-   isMenuOpen: PropTypes.bool.isRequired,
-   setIsMenuOpen: PropTypes.func.isRequired
-}
+// Menu.propTypes = {
+//    isMenuOpen: PropTypes.bool.isRequired,
+//    setIsMenuOpen: PropTypes.func.isRequired
+// }
