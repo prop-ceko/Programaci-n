@@ -84,10 +84,8 @@ interface Page {
    visibility? : Visibility
 }
 
+// TODO: ?
 export const pages: Page[] = [
-   {
-      path: '/'
-   },
    {
       title: 'Iniciar sesión',
       path: '/login',
@@ -123,7 +121,6 @@ export const pages: Page[] = [
 ]
 
 export function getScreenArray(){
-   // return Object.values(pages)
    return pages
 }
 

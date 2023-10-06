@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-2ky6dlt)#yum(&c9+wd%o!^-^qmq)xika^e)u#9i*3tzk#tl*_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-CORS_ALLOWED_ORIGINS = ["http://127.0.0.1:5173"]
+CORS_ALLOW_ALL_ORIGINS = True
 
 AUTH_USER_MODEL = 'reservas.Usuario'
 AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend', 'reservas.backends.EmailBackend']
@@ -106,10 +106,12 @@ WSGI_APPLICATION = 'the_project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+db_name = 'db_debug.sqlite3' if DEBUG else 'db.sqlite3'
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': BASE_DIR / db_name,
     }
 }
 

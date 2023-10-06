@@ -39,24 +39,6 @@ def update_if_different(instance, data, fields: Iterable[str]):
     return any_changed
 
 
-# class DynamicSerializer(serializers.ModelSerializer):
-#
-#     def __init__(self, instance=None, data=empty, fields=None, exclude_fields=None, **kwargs):
-#         self.dynamic_fields = fields
-#         self.dynamic_exclude_fields = exclude_fields
-#         if fields is not None and exclude_fields is not None:
-#             raise Exception("Either fields or exclude_fields must be set. Not both")
-#         super().__init__(instance, data, **kwargs)
-#
-#     def get_field_names(self, declared_fields, info):
-#         fields = super().get_field_names(declared_fields, info)
-#         if self.dynamic_exclude_fields is not None:
-#             return [field for field in fields if field not in self.dynamic_exclude_fields]
-#         if self.dynamic_fields is not None:
-#             return [field for field in fields if field in self.dynamic_fields]
-#         return fields
-
-
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(required=True, write_only=True, style={'input_type': 'password'})
@@ -144,13 +126,6 @@ class AulaFieldSerializer(serializers.ModelSerializer):
         if "id" not in attrs and "nombre" not in attrs:
             raise serializers.ValidationError("Se requiere el id o el nombre del aula")
         return attrs
-
-
-# class AulaFieldSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Aula
-#         fields = ('id', 'nombre')
-
 
 class EstablecimientoSerializer(serializers.ModelSerializer):
     class Meta:

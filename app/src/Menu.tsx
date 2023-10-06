@@ -5,8 +5,15 @@ import { Visibility, getScreenArray } from './Pages';
 import logo from './assets/unraf-logo.png';
 import { useAuth } from './context/api';
 
-function ItemButton({auth, visibility, text, href, onClick} : { auth: boolean, visibility: Visibility, text: string, href: string, onClick: () => void}) {
-   // const {auth} = useAuth()
+interface ItemButtonProps {
+   auth: boolean
+   visibility: Visibility
+   text: string
+   href: string
+   onClick: () => void
+}
+
+function ItemButton({auth, visibility, text, href, onClick} : ItemButtonProps) {
    if (auth && visibility != Visibility.AuthOnly)
       return
    if (!auth && visibility != Visibility.NonAuthOnly)
@@ -19,46 +26,38 @@ function ItemButton({auth, visibility, text, href, onClick} : { auth: boolean, v
    )
 }
 
-export function Menu({ isMenuOpen, closeMenu }) {
-   const {auth, logout} = useAuth()
-
-   // const screens = getScreenArray()
-   // const public_ = screens.filter(s => s.visibility == Visibility.Public)
-   // const authOnly = screens.filter(s => s.visibility == Visibility.AuthOnly)
-   // const nonAuthOnly = screens.filter(s => s.visibility == Visibility.NonAuthOnly)
-
-   return <Drawer open={isMenuOpen} onClose={closeMenu}>
-      <Link to="https://unraf.edu.ar">
-         <img src={logo} width={300} style={{ padding: "8px" }}/>
-      </Link>
-      <List>
-         {getScreenArray().map(screen =>
-            screen.showInMenu &&
-            <ItemButton
-               key={screen.path}
-               auth={auth}
-               href={screen.path}
-               text={screen.title}
-               visibility={screen.visibility}
-               onClick={closeMenu}
-            />
-         )}
-         {/* {public_.map(page =>
-            <ListItemButton key={page.path} href={page.path} onClick={() => setIsMenuOpen(false)}>
-               <ListItemText primary={page.title} />
-            </ListItemButton>
-         )} */}
-         {
-            auth &&
-            <ListItemButton>
-               <ListItemText primary={"Cerrar sesión"} onClick={logout} />
-            </ListItemButton>
-         }
-      </List>
-   </Drawer>;
+interface MenuProps {
+   isMenuOpen: boolean
+   closeMenu: () => void
 }
 
-// Menu.propTypes = {
-//    isMenuOpen: PropTypes.bool.isRequired,
-//    setIsMenuOpen: PropTypes.func.isRequired
-// }
+export function Menu({ isMenuOpen, closeMenu }: MenuProps) {
+   const {auth, logout} = useAuth()
+
+   return (
+      <Drawer open={isMenuOpen} onClose={closeMenu}>
+         <Link to="https://unraf.edu.ar">
+            <img src={logo} width={300} style={{ padding: "8px" }}/>
+         </Link>
+         <List>
+            {getScreenArray().map(screen =>
+               screen.showInMenu &&
+               <ItemButton
+                  key={screen.path}
+                  auth={auth}
+                  href={screen.path}
+                  text={screen.title}
+                  visibility={screen.visibility}
+                  onClick={closeMenu}
+               />
+            )}
+            {
+               auth &&
+               <ListItemButton>
+                  <ListItemText primary={"Cerrar sesión"} onClick={logout} />
+               </ListItemButton>
+            }
+         </List>
+      </Drawer>
+   )
+}

@@ -73,7 +73,6 @@ const defaultTheme = createTheme({
 const router = createBrowserRouter(createRoutes())
 
 function App() {
-   // const {auth} = useAuth()
 
    return (
       <LocalizationProvider dateAdapter={AdapterLuxon} adapterLocale="es">
