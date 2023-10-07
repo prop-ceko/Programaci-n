@@ -33,8 +33,9 @@ def update_if_different(instance, data, fields: Iterable[str]):
     return any_changed
 
 
-class RelatedField(serializers.RelatedField):
-    pass
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(required=True, write_only=True, style={'input_type': 'password'})
 
 
 class EquipamientoAulaSerializer(serializers.ModelSerializer):

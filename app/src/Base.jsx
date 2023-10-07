@@ -56,8 +56,6 @@ function Base({title, icons, children}) {
          {children}
       </Box>
    );
-   // return (<RouterProvider router={router} />)
-   // return <Login></Login>
 }
 
 Base.propTypes = {

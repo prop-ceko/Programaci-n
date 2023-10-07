@@ -1,16 +1,32 @@
 from datetime import datetime
 from typing import Optional
 
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User, Group, AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import UniqueConstraint
+from django.utils.translation import gettext_lazy as _
 
-from reservas.settings import MAX_LARGO_NOMBRES
+from reservas.settings import MAX_LARGO_NOMBRES, MAX_LARGO_USUARIOS
+from the_project import settings
 
 # Create your models here.
 Group.add_to_class('prioridad', models.PositiveIntegerField(default=0))
+
+
+class Usuario(AbstractUser):
+    username = None
+    email = models.EmailField(_("email address"), unique=True)
+    first_name = models.CharField(_("first name"), max_length=MAX_LARGO_NOMBRES)
+    last_name = models.CharField(_("last name"), max_length=MAX_LARGO_NOMBRES)
+
+    USERNAME_FIELD = 'email'
+    EMAIL_FIELD = 'email'
+    REQUIRED_FIELDS = []
+
+    def __str__(self):
+        return self.email
 
 
 class Establecimiento(models.Model):
@@ -99,7 +115,7 @@ class Equipamiento(models.Model):
 
 class Reserva(models.Model):
     aula = models.ForeignKey(Aula, on_delete=models.CASCADE)
-    solicitante = models.ForeignKey(User, on_delete=models.CASCADE)
+    solicitante = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     fecha = models.DateField()
     desde = models.TimeField()
     hasta = models.TimeField()

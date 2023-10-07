@@ -1,6 +1,16 @@
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
-import { RouterProvider, createBrowserRouter } from 'react-router-dom';
+import { RouterProvider, createBrowserRouter, Link as RouterLink } from 'react-router-dom';
 import { createRoutes } from './Pages';
+import PropTypes from "prop-types";
+
+import React from 'react';
+
+const LinkBehavior = React.forwardRef(function P(props, ref) {
+  // @ts-ignore
+  const { href, ...other } = props;
+  // Map href (Material UI) -> to (react-router)
+  return <RouterLink ref={ref} to={href} {...other} />;
+});
 
 const defaultTheme = createTheme({
    typography: {
@@ -22,7 +32,24 @@ const defaultTheme = createTheme({
       h5: {
          fontSize: "1.25rem"
       }
-   }
+   },
+   components: {
+      MuiLink: {
+         defaultProps: {
+            component: LinkBehavior,
+         },
+      },
+      MuiButtonBase: {
+         defaultProps: {
+            LinkComponent: LinkBehavior,
+         },
+      },
+      MuiListItemButton: {
+         defaultProps: {
+            LinkComponent: LinkBehavior,
+         },
+      }
+   },
 });
 
 const router = createBrowserRouter(createRoutes())

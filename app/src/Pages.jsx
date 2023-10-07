@@ -4,6 +4,9 @@ import PasswordReset from './pages/PasswordReset';
 import PasswordRecovery from './pages/PasswordRecovery';
 import Register from './pages/Register';
 import RegisterTemporally from './pages/RegisterTemporally';
+import { Navbar } from './Navbar';
+
+const nav = <Navbar/>
 
 export const pages = {
    root: {
@@ -44,10 +47,21 @@ export function getScreenArray(){
 }
 
 export function createRoutes() {
-   return getScreenArray().map(screen => (
+   const pageArray = getScreenArray().map(screen => (
       {
          path: screen.path,
          element: screen.element
       }
    ));
+
+   if (nav == null)
+      return pageArray
+
+   return [
+      {
+         path: '/',
+         element: nav,
+         children: pageArray
+      }
+   ]
 }
