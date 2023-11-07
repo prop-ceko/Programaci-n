@@ -1,16 +1,36 @@
-from datetime import datetime
+import datetime
 from typing import Optional
 
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User, Group, AbstractUser
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import UniqueConstraint
+from django.utils.translation import gettext_lazy as _
 
+from reservas.managers import UserManager
 from reservas.settings import MAX_LARGO_NOMBRES
+from the_project import settings
 
 # Create your models here.
 Group.add_to_class('prioridad', models.PositiveIntegerField(default=0))
+
+
+class Usuario(AbstractUser):
+    username = None
+    email = models.EmailField(_("email address"), unique=True)
+    dni = models.PositiveIntegerField(unique=True)
+    first_name = models.CharField(_("first name"), max_length=MAX_LARGO_NOMBRES)
+    last_name = models.CharField(_("last name"), max_length=MAX_LARGO_NOMBRES)
+
+    objects = UserManager()
+
+    USERNAME_FIELD = 'email'
+    EMAIL_FIELD = 'email'
+    REQUIRED_FIELDS = ['dni']
+
+    def __str__(self):
+        return self.email
 
 
 class Establecimiento(models.Model):
@@ -42,10 +62,16 @@ class Aula(models.Model):
         if self.edificio is not None:
             self.establecimiento = self.edificio.establecimiento
 
+    def get_reservas(self, fecha: Optional[datetime.date] = None):
+        if fecha is None:
+            fecha = datetime.date.today()
+        return Reserva.objects.filter(aula=self, fecha=fecha)
+
+
     def disponible(self, ahora=False, fecha: Optional[datetime.date] = None,
                    desde: Optional[datetime.time] = None, hasta: Optional[datetime.time] = None):
         if ahora:
-            ahora = datetime.now()
+            ahora = datetime.datetime.now()
             fecha = ahora.date()
             desde = hasta = ahora.time()
         reservas_ahora = Reserva.objects.filter(aula=self, fecha=fecha, desde__lte=desde, hasta__gte=hasta)
@@ -99,7 +125,7 @@ class Equipamiento(models.Model):
 
 class Reserva(models.Model):
     aula = models.ForeignKey(Aula, on_delete=models.CASCADE)
-    solicitante = models.ForeignKey(User, on_delete=models.CASCADE)
+    solicitante = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     fecha = models.DateField()
     desde = models.TimeField()
     hasta = models.TimeField()

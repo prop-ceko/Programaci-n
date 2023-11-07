@@ -6,16 +6,17 @@
    "extends": [
       "eslint:recommended",
       "plugin:react/recommended",
-      "plugin:import/recommended",
-      "eslint-config-prettier"
+      "plugin:@typescript-eslint/eslint-recommended",
+      "plugin:@typescript-eslint/recommended"
    ],
    "overrides": [],
+   "parser": "@typescript-eslint/parser",
    "parserOptions": {
       "ecmaFeatures": { "jsx": true },
       "ecmaVersion": "latest",
       "sourceType": "module"
    },
-   "plugins": ["react"],
+   "plugins": ["react", "@typescript-eslint"],
    "settings": {
       "react": {
          "version": "detect"
@@ -23,12 +24,17 @@
       "import/resolver": {
          "node": {
             "paths": ["src"],
-            "extensions": [".js", ".jsx"]
+            "extensions": [".js", ".jsx", ".ts", ".tsx"]
          }
       }
    },
    "rules": {
       "react/react-in-jsx-scope": "off",
-      "no-unused-vars": "warn"
+      "react/prop-types": "off",
+      "react/display-name": "off",
+      "no-unused-vars": "warn",
+      "prefer-const": "warn",
+      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-explicit-any": "off"
    }
 }

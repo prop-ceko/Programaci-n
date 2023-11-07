@@ -1,70 +1,51 @@
-import { Container, Stack } from '@mui/material';
+import { Stack } from '@mui/material';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import Link from '@mui/material/Link';
 import TextField from '@mui/material/TextField';
-import { pages } from '../Pages';
+import { Form, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/api';
 import { setTitle } from '../context/navbar';
 
-export default function Register() {
-   setTitle("Registro")
+
+export default function Login() {
+   const {login} = useAuth()
+   const navigate = useNavigate()
+   setTitle("Inicio de sesión")
 
    const handleSubmit = (event) => {
       event.preventDefault();
       const data = new FormData(event.currentTarget);
-      console.log({
-         email: data.get('email'),
-         password: data.get('password')
-      });
+      login(data.get('email'), data.get('password')).then(() => navigate("/reservas"))
    };
 
    return (
       <Container component="main" maxWidth="xs" sx={{
-         paddingX: 4,
-         marginTop: 4,
+         marginY: 4,
          display: 'flex',
          flexDirection: 'column',
          alignItems: 'center'
       }}>
-         <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
+         <Box component={Form} onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
             <TextField
-               margin="normal"
-               required
-               fullWidth
-               id="name"
-               label="Nombre y Apellido"
-               name="name"
-               autoComplete="name"
-               autoFocus
-            />
-            <TextField
-               margin="normal"
-               required
-               fullWidth
-               name="dni"
-               label="DNI"
-               id="dni"
-               autoComplete="dni"
-            />
-            <TextField
-               margin="normal"
-               required
-               fullWidth
-               id="email"
                label="Correo electrónico"
                name="email"
+               type="email"
                autoComplete="email"
+               autoFocus
+               fullWidth
+               required
             />
             <TextField
                margin="normal"
-               required
-               fullWidth
-               name="password"
                label="Contraseña"
+               name="password"
                type="password"
-               id="password"
                autoComplete="password"
+               fullWidth
+               required
             />
             <Button
                type="submit"
@@ -76,8 +57,13 @@ export default function Register() {
             </Button>
             <Stack direction="column" alignItems="center" mt={4} gap={1} >
                <Grid item>
-                  <Link href="/login" variant="body2">
-                     Ya tengo una cuenta. Iniciar sesión
+                  <Link href="/recuperar_contrasena" variant="body2">
+                     Olvidé mi contraseña
+                  </Link>
+               </Grid>
+               <Grid item>
+                  <Link href="/registro" variant="body2">
+                     Registrarme
                   </Link>
                </Grid>
                <Grid item>
