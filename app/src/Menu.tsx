@@ -1,5 +1,4 @@
 import { Drawer, List, ListItemButton, ListItemText } from '@mui/material';
-import PropTypes from "prop-types";
 import { Link } from 'react-router-dom';
 import { Visibility, getScreenArray } from './Pages';
 import logo from './assets/unraf-logo.png';

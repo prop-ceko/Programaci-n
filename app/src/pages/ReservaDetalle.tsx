@@ -2,10 +2,11 @@ import { Container, MenuItem, TextField, Button, Stack, Typography, Card, Divide
 import { useLoaderData, useNavigate } from "react-router-dom";
 import { AulaType, EquipamientoType, ReservaType, createReserva, deleteReserva, getAulas, getEquipamiento, getReserva, updateReserva } from "../context/api";
 import { ReactNode, useState } from "react";
-import { DatePickerElement, FormContainer, SelectElement, TimePickerElement } from "react-hook-form-mui";
+import { FormContainer, SelectElement } from "react-hook-form-mui";
+import { DatePickerElement, TimePickerElement } from 'react-hook-form-mui/date-pickers';
 import { DateTime } from "luxon";
-import { useSnackbar } from "../context/snackbar";
 import { setTitle } from "../context/navbar";
+import { useSnackbar } from "../context/snackbar";
 
 
 interface EquipamientoProps {
@@ -59,9 +60,8 @@ function Equipamiento({ id, cantidad=0, setEquipamiento, setCantidad, opciones=[
                   onChange={e => handleCantidad(e.target.value)}
                   sx={{
                      textAlign: "right",
-                     flexBasis: "4em"
+                     flexBasis: "4em",
                   }}
-                  inputProps={{ style: { textAlign: "center" }}}
                />
             </Stack>
          </CardContent>

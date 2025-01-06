@@ -1,5 +1,4 @@
 import { Navigate, RouteObject } from 'react-router-dom';
-import { Navbar } from './Navbar';
 import Login from './pages/Login';
 import MisReservas, { misReservasLoader } from './pages/MisReservas';
 import PasswordRecovery from './pages/PasswordRecovery';

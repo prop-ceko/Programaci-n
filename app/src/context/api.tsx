@@ -1,6 +1,5 @@
 import axios, { AxiosError, AxiosResponse } from "axios"
-import { createContext, useContext, useEffect, useRef, useState } from "react"
-import Cookies from "js-cookie"
+import { createContext, useContext } from "react"
 import { createState } from "state-pool"
 
 const baseURL = "http://127.0.0.1:8000/api"
